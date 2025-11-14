@@ -12,9 +12,12 @@ COPY src ./src
 RUN npm ci
 RUN npm run build
 
-FROM nginx:1.27-alpine
-COPY nginx/default.conf /etc/nginx/conf.d/default.conf
-COPY --from=build /app/dist /usr/share/nginx/html
+FROM node:20-alpine
+WORKDIR /app
 
-# EXPOSE 4173
-CMD ["nginx", "-g", "daemon off;"]
+# Install serve globally for serving static files
+RUN npm install -g serve
+
+COPY --from=build /app/dist /app/dist
+
+CMD ["serve", "-s", "dist"]

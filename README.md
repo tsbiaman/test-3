@@ -14,7 +14,7 @@ A full-stack application for testing automated deployment features with REST API
   - Interactive dashboard for backend interaction
   - Real-time WebSocket event feed
   - Health monitoring and job queuing interface
-  - Docker containerized with Nginx
+  - Docker containerized with Node.js serve
 
 ## Deployment
 

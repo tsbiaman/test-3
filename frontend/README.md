@@ -35,22 +35,22 @@ Access them from code via `import.meta.env.VITE_API_BASE_URL`.
 ```bash
 cd LOCAL_3/frontend
 npm run build
-npm run preview  # optional smoke test on http://localhost:4173
+npm run preview  # optional smoke test on http://localhost:3000
 ```
 
 The compiled assets land in `dist/` and are ready to be served by any static web server.
 
 ## Docker image
 
-Use the included multi-stage Dockerfile to produce an optimized Nginx image:
+Use the included multi-stage Dockerfile to produce an optimized image with Node.js serve:
 
 ```bash
 cd LOCAL_3/frontend
 docker build -t auto-deploy-frontend .
-docker run -p 4173:4173 auto-deploy-frontend
+docker run -p 3000:3000 auto-deploy-frontend
 ```
 
-`nginx/default.conf` enables SPA routing (`try_files ... /index.html`).
+The container uses `serve` to serve the static files with SPA routing support.
 
 ## Linting
 
