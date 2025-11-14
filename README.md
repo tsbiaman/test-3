@@ -30,7 +30,7 @@ The `.github/workflows/deploy-local3.yml` follows the registry-based deployment 
 
 ### Site Configuration
 
-- **Backend Site ID**: `local-3` (matches repository name)
+- **Backend Site ID**: `local-3-backend`
 - **Frontend Site ID**: `local-3-frontend`
 - **Registry**: `registry.tsbi.fun`
 - **Image Names**: `local-3-backend`, `local-3-frontend`

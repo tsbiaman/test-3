@@ -11,7 +11,7 @@ on:
 env:
   REGISTRY: registry.tsbi.fun
   IMAGE_NAME: local-3
-  BACKEND_SITE_ID: local-3
+  BACKEND_SITE_ID: local-3-backend
   FRONTEND_SITE_ID: local-3-frontend
 
 jobs:
@@ -73,22 +73,22 @@ jobs:
           case "$BRANCH" in
             main)
               ENVIRONMENT="production"
-              BACKEND_DOMAIN="local-3.tsbi.fun"
+              BACKEND_DOMAIN="local-3-backend.tsbi.fun"
               FRONTEND_DOMAIN="local-3-frontend.tsbi.fun"
               ;;
             develop)
               ENVIRONMENT="develop"
-              BACKEND_DOMAIN="develop-local-3.tsbi.fun"
+              BACKEND_DOMAIN="develop-local-3-backend.tsbi.fun"
               FRONTEND_DOMAIN="develop-local-3-frontend.tsbi.fun"
               ;;
             staging)
               ENVIRONMENT="staging"
-              BACKEND_DOMAIN="staging-local-3.tsbi.fun"
+              BACKEND_DOMAIN="staging-local-3-backend.tsbi.fun"
               FRONTEND_DOMAIN="staging-local-3-frontend.tsbi.fun"
               ;;
             *)
               ENVIRONMENT="preview"
-              BACKEND_DOMAIN="preview-local-3.tsbi.fun"
+              BACKEND_DOMAIN="preview-local-3-backend.tsbi.fun"
               FRONTEND_DOMAIN="preview-local-3-frontend.tsbi.fun"
               ;;
           esac
@@ -151,22 +151,22 @@ jobs:
           case "$BRANCH" in
             main)
               ENVIRONMENT="production"
-              BACKEND_DOMAIN="local-3.tsbi.fun"
+              BACKEND_DOMAIN="local-3-backend.tsbi.fun"
               FRONTEND_DOMAIN="local-3-frontend.tsbi.fun"
               ;;
             develop)
               ENVIRONMENT="development"
-              BACKEND_DOMAIN="develop-local-3.tsbi.fun"
+              BACKEND_DOMAIN="develop-local-3-backend.tsbi.fun"
               FRONTEND_DOMAIN="develop-local-3-frontend.tsbi.fun"
               ;;
             staging)
               ENVIRONMENT="staging"
-              BACKEND_DOMAIN="staging-local-3.tsbi.fun"
+              BACKEND_DOMAIN="staging-local-3-backend.tsbi.fun"
               FRONTEND_DOMAIN="staging-local-3-frontend.tsbi.fun"
               ;;
             *)
               ENVIRONMENT="preview"
-              BACKEND_DOMAIN="preview-local-3.tsbi.fun"
+              BACKEND_DOMAIN="preview-local-3-backend.tsbi.fun"
               FRONTEND_DOMAIN="preview-local-3-frontend.tsbi.fun"
               ;;
           esac
@@ -229,7 +229,7 @@ jobs:
           script: |
             const prNumber = parseInt(process.env.PR_NUMBER, 10);
             if (Number.isNaN(prNumber)) return;
-            const backendDomain = `preview-local-3.tsbi.fun`;
+            const backendDomain = `preview-local-3-backend.tsbi.fun`;
             const frontendDomain = `preview-local-3-frontend.tsbi.fun`;
             github.rest.issues.createComment({
               owner: context.repo.owner,
