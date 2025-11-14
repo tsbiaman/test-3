@@ -1,5 +1,5 @@
 site:
-  id: local-3-backend
+  id: local-3
   name: "LOCAL_3 Backend (Flask + DBs)"
   github_repo: "https://github.com/tsbiaman/testing"
 
@@ -10,7 +10,7 @@ site:
   defaults:
     branch: main
     domain_suffix: "tsbi.fun"
-    port: 8080
+    port: auto
     replicas: 1
     resources:
       backend:
@@ -23,32 +23,32 @@ site:
     production:
       enabled: true
       branch: main
-      domain: local3-backend.tsbi.fun
-      port: 8080
+      domain: local-3.tsbi.fun
+      # port: auto
       replicas: 2
       database: true
       redis: true
     staging:
       enabled: true
       branch: develop
-      domain: staging-local3-backend.tsbi.fun
-      port: 8080
+      domain: staging-local-3.tsbi.fun
+      # port: auto
       replicas: 1
       database: true
       redis: true
     develop:
       enabled: true
       branch: develop
-      domain: develop-local3-backend.tsbi.fun
-      port: 8080
+      domain: develop-local-3.tsbi.fun
+      # port: auto
       replicas: 1
       database: true
       redis: true
     preview:
       enabled: true
       branch: develop
-      domain: preview-local3-backend.tsbi.fun
-      port: 8080
+      domain: preview-local-3.tsbi.fun
+      # port: auto
       replicas: 1
       database: true
       redis: true

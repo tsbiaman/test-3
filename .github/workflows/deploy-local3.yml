@@ -6,105 +6,182 @@ on:
   pull_request:
     branches: [main]
     types: [opened, synchronize, reopened]
+  workflow_dispatch:
+
+env:
+  REGISTRY: registry.tsbi.fun
+  IMAGE_NAME: local-3
+  BACKEND_SITE_ID: local-3
+  FRONTEND_SITE_ID: local-3-frontend
 
 jobs:
-  deploy-backend:
-    name: Deploy Backend
+  test:
+    name: Test
     runs-on: ubuntu-latest
-    env:
-      SITE_ID: local-3-backend
     steps:
-      - name: Checkout
+      - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Determine target environment
-        id: env
-        run: |
-          set -euo pipefail
-          if [[ "${{ github.event_name }}" == "pull_request" ]]; then
-            echo "ENVIRONMENT=preview" >>$GITHUB_ENV
-            PR_NUMBER=${{ github.event.pull_request.number }}
-            echo "PR_NUMBER=$PR_NUMBER" >>$GITHUB_ENV
-            echo "DOMAIN=local3-backend-pr-${PR_NUMBER}.tsbi.fun" >>$GITHUB_ENV
-            echo "BRANCH=${{ github.head_ref }}" >>$GITHUB_ENV
-          elif [[ "${{ github.ref_name }}" == "main" ]]; then
-            echo "ENVIRONMENT=production" >>$GITHUB_ENV
-            echo "DOMAIN=local3-backend.tsbi.fun" >>$GITHUB_ENV
-            echo "BRANCH=main" >>$GITHUB_ENV
-          elif [[ "${{ github.ref_name }}" == "staging" ]]; then
-            echo "ENVIRONMENT=staging" >>$GITHUB_ENV
-            echo "DOMAIN=staging-local3-backend.tsbi.fun" >>$GITHUB_ENV
-            echo "BRANCH=staging" >>$GITHUB_ENV
-          else
-            echo "ENVIRONMENT=develop" >>$GITHUB_ENV
-            echo "DOMAIN=develop-local3-backend.tsbi.fun" >>$GITHUB_ENV
-            echo "BRANCH=${{ github.ref_name }}" >>$GITHUB_ENV
-          fi
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.11'
 
-      - name: Deploy Backend via SSH
+      - name: Install backend dependencies
+        run: |
+          cd backend
+          pip install -r requirements.txt
+
+      - name: Run backend tests
+        run: |
+          cd backend
+          python -m pytest -v
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+
+      - name: Install frontend dependencies
+        run: |
+          cd frontend
+          npm ci
+
+      - name: Lint frontend
+        run: |
+          cd frontend
+          npm run lint
+
+  build-and-push:
+    name: Build and Push Images
+    runs-on: ubuntu-latest
+    needs: test
+    if: github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Derive deployment metadata
+        id: metadata
+        run: |
+          BRANCH="${{ github.ref_name }}"
+          SHORT_SHA="${GITHUB_SHA::8}"
+
+          case "$BRANCH" in
+            main)
+              ENVIRONMENT="production"
+              BACKEND_DOMAIN="local-3.tsbi.fun"
+              FRONTEND_DOMAIN="local-3-frontend.tsbi.fun"
+              ;;
+            develop)
+              ENVIRONMENT="develop"
+              BACKEND_DOMAIN="develop-local-3.tsbi.fun"
+              FRONTEND_DOMAIN="develop-local-3-frontend.tsbi.fun"
+              ;;
+            staging)
+              ENVIRONMENT="staging"
+              BACKEND_DOMAIN="staging-local-3.tsbi.fun"
+              FRONTEND_DOMAIN="staging-local-3-frontend.tsbi.fun"
+              ;;
+            *)
+              ENVIRONMENT="preview"
+              BACKEND_DOMAIN="preview-local-3.tsbi.fun"
+              FRONTEND_DOMAIN="preview-local-3-frontend.tsbi.fun"
+              ;;
+          esac
+
+          {
+            echo "ENVIRONMENT=${ENVIRONMENT}"
+            echo "BACKEND_DOMAIN=${BACKEND_DOMAIN}"
+            echo "FRONTEND_DOMAIN=${FRONTEND_DOMAIN}"
+            echo "SHORT_SHA=${SHORT_SHA}"
+            echo "IMAGE_TAG=${SHORT_SHA}"
+            echo "BRANCH_NAME=${BRANCH}"
+            echo "COMMIT_SHA=${GITHUB_SHA}"
+          } >> "$GITHUB_ENV"
+
+      - name: Build Docker images
+        run: |
+          docker build \
+            --platform linux/amd64 \
+            -f backend/Dockerfile \
+            -t $REGISTRY/$IMAGE_NAME-backend:${SHORT_SHA} \
+            -t $REGISTRY/$IMAGE_NAME-backend:${{ github.sha }} \
+            -t $REGISTRY/$IMAGE_NAME-backend:latest \
+            ./backend
+
+          docker build \
+            --platform linux/amd64 \
+            -f frontend/Dockerfile \
+            -t $REGISTRY/$IMAGE_NAME-frontend:${SHORT_SHA} \
+            -t $REGISTRY/$IMAGE_NAME-frontend:${{ github.sha }} \
+            -t $REGISTRY/$IMAGE_NAME-frontend:latest \
+            ./frontend
+
+      - name: Login to container registry
+        run: echo "${{ secrets.REGISTRY_PASSWORD }}" | docker login $REGISTRY -u "${{ secrets.REGISTRY_USER }}" --password-stdin
+
+      - name: Push Docker images
+        run: |
+          docker push $REGISTRY/$IMAGE_NAME-backend:${SHORT_SHA}
+          docker push $REGISTRY/$IMAGE_NAME-backend:${{ github.sha }}
+          docker push $REGISTRY/$IMAGE_NAME-backend:latest
+          docker push $REGISTRY/$IMAGE_NAME-frontend:${SHORT_SHA}
+          docker push $REGISTRY/$IMAGE_NAME-frontend:${{ github.sha }}
+          docker push $REGISTRY/$IMAGE_NAME-frontend:latest
+
+  deploy:
+    name: Deploy to TSBI
+    runs-on: ubuntu-latest
+    needs: build-and-push
+    if: github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Add VPS host to known hosts
+        run: |
+          mkdir -p ~/.ssh
+          ssh-keyscan -H "${{ secrets.TSBI_HOST }}" >> ~/.ssh/known_hosts
+
+      - name: Upload sites manifests
+        uses: appleboy/scp-action@v0.1.7
+        with:
+          host: ${{ secrets.TSBI_HOST }}
+          username: ${{ secrets.TSBI_USER }}
+          key: ${{ secrets.TSBI_SSH_KEY }}
+          source: sites/
+          target: /data/ecosystem/sites/
+          strip_components: 1
+
+      - name: Deploy to TSBI swarm
         uses: appleboy/ssh-action@v1.0.0
         with:
           host: ${{ secrets.TSBI_HOST }}
           username: ${{ secrets.TSBI_USER }}
           key: ${{ secrets.TSBI_SSH_KEY }}
+          envs: REGISTRY,IMAGE_NAME,BACKEND_SITE_ID,FRONTEND_SITE_ID,ENVIRONMENT,BACKEND_DOMAIN,FRONTEND_DOMAIN,IMAGE_TAG,BRANCH_NAME,COMMIT_SHA,SHORT_SHA
           script: |
             set -euo pipefail
+
+            echo "Deploying LOCAL_3 stack"
+            echo "  Environment : ${ENVIRONMENT}"
+            echo "  Branch      : ${BRANCH_NAME}"
+            echo "  Image tag   : ${IMAGE_TAG}"
+            echo "  Backend domain  : ${BACKEND_DOMAIN}"
+            echo "  Frontend domain : ${FRONTEND_DOMAIN}"
+
+            echo "Authenticating with registry"
+            echo "${{ secrets.REGISTRY_PASSWORD }}" | docker login $REGISTRY -u "${{ secrets.REGISTRY_USER }}" --password-stdin
+
             cd /data/ecosystem
-            ./scripts/deploy-app.sh \
-              "${{ env.SITE_ID }}" \
-              "${{ env.ENVIRONMENT }}" \
-              --branch "${{ env.BRANCH }}" \
-              --domain "${{ env.DOMAIN }}"
-            echo "🚀 Deployed ${SITE_ID} to ${ENVIRONMENT} (${DOMAIN})"
 
-  deploy-frontend:
-    name: Deploy Frontend
-    runs-on: ubuntu-latest
-    env:
-      SITE_ID: local-3-frontend
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v4
+            ./scripts/deploy-from-registry.sh "$BACKEND_SITE_ID" "$ENVIRONMENT" "$BACKEND_DOMAIN" "$REGISTRY/$IMAGE_NAME-backend:$IMAGE_TAG" --branch "$BRANCH_NAME" --commit "$COMMIT_SHA"
 
-      - name: Determine target environment
-        id: env
-        run: |
-          set -euo pipefail
-          if [[ "${{ github.event_name }}" == "pull_request" ]]; then
-            echo "ENVIRONMENT=preview" >>$GITHUB_ENV
-            PR_NUMBER=${{ github.event.pull_request.number }}
-            echo "PR_NUMBER=$PR_NUMBER" >>$GITHUB_ENV
-            echo "DOMAIN=local3-pr-${PR_NUMBER}.tsbi.fun" >>$GITHUB_ENV
-            echo "BRANCH=${{ github.head_ref }}" >>$GITHUB_ENV
-          elif [[ "${{ github.ref_name }}" == "main" ]]; then
-            echo "ENVIRONMENT=production" >>$GITHUB_ENV
-            echo "DOMAIN=local3.tsbi.fun" >>$GITHUB_ENV
-            echo "BRANCH=main" >>$GITHUB_ENV
-          elif [[ "${{ github.ref_name }}" == "staging" ]]; then
-            echo "ENVIRONMENT=staging" >>$GITHUB_ENV
-            echo "DOMAIN=staging-local3.tsbi.fun" >>$GITHUB_ENV
-            echo "BRANCH=staging" >>$GITHUB_ENV
-          else
-            echo "ENVIRONMENT=develop" >>$GITHUB_ENV
-            echo "DOMAIN=develop-local3.tsbi.fun" >>$GITHUB_ENV
-            echo "BRANCH=${{ github.ref_name }}" >>$GITHUB_ENV
-          fi
-
-      - name: Deploy Frontend via SSH
-        uses: appleboy/ssh-action@v1.0.0
-        with:
-          host: ${{ secrets.TSBI_HOST }}
-          username: ${{ secrets.TSBI_USER }}
-          key: ${{ secrets.TSBI_SSH_KEY }}
-          script: |
-            set -euo pipefail
-            cd /data/ecosystem
-            ./scripts/deploy-app.sh \
-              "${{ env.SITE_ID }}" \
-              "${{ env.ENVIRONMENT }}" \
-              --branch "${{ env.BRANCH }}" \
-              --domain "${{ env.DOMAIN }}"
-            echo "🚀 Deployed ${SITE_ID} to ${ENVIRONMENT} (${DOMAIN})"
+            ./scripts/deploy-from-registry.sh "$FRONTEND_SITE_ID" "$ENVIRONMENT" "$FRONTEND_DOMAIN" "$REGISTRY/$IMAGE_NAME-frontend:$IMAGE_TAG" --branch "$BRANCH_NAME" --commit "$COMMIT_SHA"
 
       - name: Comment PR with preview links
         if: github.event_name == 'pull_request'
@@ -113,8 +190,8 @@ jobs:
           script: |
             const prNumber = parseInt(process.env.PR_NUMBER, 10);
             if (Number.isNaN(prNumber)) return;
-            const backendDomain = `local3-backend-pr-${prNumber}.tsbi.fun`;
-            const frontendDomain = `local3-pr-${prNumber}.tsbi.fun`;
+            const backendDomain = `preview-local-3.tsbi.fun`;
+            const frontendDomain = `preview-local-3-frontend.tsbi.fun`;
             github.rest.issues.createComment({
               owner: context.repo.owner,
               repo: context.repo.repo,

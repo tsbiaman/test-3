@@ -10,7 +10,7 @@ site:
   defaults:
     branch: main
     domain_suffix: "tsbi.fun"
-    port: 4173
+    port: auto
     replicas: 1
     resources:
       backend:
@@ -23,32 +23,32 @@ site:
     production:
       enabled: true
       branch: main
-      domain: local3.tsbi.fun
-      port: 4173
+      domain: local-3-frontend.tsbi.fun
+      # port: auto
       replicas: 2
       database: false
       redis: false
     staging:
       enabled: true
       branch: develop
-      domain: staging-local3.tsbi.fun
-      port: 4173
+      domain: staging-local-3-frontend.tsbi.fun
+      # port: auto
       replicas: 1
       database: false
       redis: false
     develop:
       enabled: true
       branch: develop
-      domain: develop-local3.tsbi.fun
-      port: 4173
+      domain: develop-local-3-frontend.tsbi.fun
+      # port: auto
       replicas: 1
       database: false
       redis: false
     preview:
       enabled: true
       branch: develop
-      domain: preview-local3.tsbi.fun
-      port: 4173
+      domain: preview-local-3-frontend.tsbi.fun
+      # port: auto
       replicas: 1
       database: false
       redis: false
