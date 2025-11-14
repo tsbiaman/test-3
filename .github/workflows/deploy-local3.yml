@@ -142,6 +142,45 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
+      - name: Derive deployment metadata
+        id: metadata
+        run: |
+          BRANCH="${{ github.ref_name }}"
+          SHORT_SHA="${GITHUB_SHA::8}"
+
+          case "$BRANCH" in
+            main)
+              ENVIRONMENT="production"
+              BACKEND_DOMAIN="local-3.tsbi.fun"
+              FRONTEND_DOMAIN="local-3-frontend.tsbi.fun"
+              ;;
+            develop)
+              ENVIRONMENT="development"
+              BACKEND_DOMAIN="develop-local-3.tsbi.fun"
+              FRONTEND_DOMAIN="develop-local-3-frontend.tsbi.fun"
+              ;;
+            staging)
+              ENVIRONMENT="staging"
+              BACKEND_DOMAIN="staging-local-3.tsbi.fun"
+              FRONTEND_DOMAIN="staging-local-3-frontend.tsbi.fun"
+              ;;
+            *)
+              ENVIRONMENT="preview"
+              BACKEND_DOMAIN="preview-local-3.tsbi.fun"
+              FRONTEND_DOMAIN="preview-local-3-frontend.tsbi.fun"
+              ;;
+          esac
+
+          {
+            echo "ENVIRONMENT=${ENVIRONMENT}"
+            echo "BACKEND_DOMAIN=${BACKEND_DOMAIN}"
+            echo "FRONTEND_DOMAIN=${FRONTEND_DOMAIN}"
+            echo "SHORT_SHA=${SHORT_SHA}"
+            echo "IMAGE_TAG=${SHORT_SHA}"
+            echo "BRANCH_NAME=${BRANCH}"
+            echo "COMMIT_SHA=${GITHUB_SHA}"
+          } >> "$GITHUB_ENV"
+
       - name: Add VPS host to known hosts
         run: |
           mkdir -p ~/.ssh
