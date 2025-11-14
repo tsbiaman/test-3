@@ -4,6 +4,7 @@ FROM node:20-alpine AS build
 WORKDIR /app
 
 COPY package.json package-lock.json ./
+COPY index.html ./
 COPY tsconfig*.json ./
 COPY vite.config.ts ./
 COPY public ./public
