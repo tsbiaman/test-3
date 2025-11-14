@@ -1,0 +1,54 @@
+site:
+  id: local-3-frontend
+  name: "LOCAL_3 Frontend (React + Vite)"
+  github_repo: "https://github.com/tsbiaman/testing"
+
+  build:
+    context: "LOCAL_3/frontend"
+    dockerfile: "LOCAL_3/frontend/Dockerfile"
+
+  defaults:
+    branch: main
+    domain_suffix: "tsbi.fun"
+    port: 4173
+    replicas: 1
+    resources:
+      backend:
+        cpus: 0.25
+        memory: 128M
+    database: false
+    redis: false
+
+  environments:
+    production:
+      enabled: true
+      branch: main
+      domain: local3.tsbi.fun
+      port: 4173
+      replicas: 2
+      database: false
+      redis: false
+    staging:
+      enabled: true
+      branch: develop
+      domain: staging-local3.tsbi.fun
+      port: 4173
+      replicas: 1
+      database: false
+      redis: false
+    develop:
+      enabled: true
+      branch: develop
+      domain: develop-local3.tsbi.fun
+      port: 4173
+      replicas: 1
+      database: false
+      redis: false
+    preview:
+      enabled: true
+      branch: develop
+      domain: preview-local3.tsbi.fun
+      port: 4173
+      replicas: 1
+      database: false
+      redis: false
