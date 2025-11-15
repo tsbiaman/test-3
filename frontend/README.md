@@ -24,7 +24,7 @@ By default Vite serves on `http://localhost:5173`. Configure a proxy to the back
 Any variable prefixed with `VITE_` is exposed to the client. For example, create a `.env` with:
 
 ```
-VITE_API_BASE_URL=http://localhost:8080/api
+VITE_API_BASE_URL=https://local-3-backend.tsbi.fun/api
 VITE_WS_URL=ws://localhost:8080
 ```
 

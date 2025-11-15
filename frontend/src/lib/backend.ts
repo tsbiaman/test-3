@@ -1,5 +1,5 @@
-const DEFAULT_API_BASE = 'http://localhost:8080/api'
-const DEFAULT_WS_URL = 'http://localhost:8080'
+const DEFAULT_API_BASE = 'https://local-3-backend.tsbi.fun/api'
+const DEFAULT_WS_URL = 'https://local-3-backend.tsbi.fun'
 
 const trimTrailingSlash = (value?: string | null) =>
   (value ?? '').replace(/\/$/, '')

@@ -30,7 +30,7 @@ cp .env.example .env  # adjust credentials or leave blank to skip live checks
 python main.py
 ```
 
-Browse `http://localhost:8080/api/health` or connect a Socket.IO client to `ws://localhost:8080`.
+Browse `https://local-3-backend.tsbi.fun/api/health` or connect a Socket.IO client to `ws://localhost:8080`.
 
 ### Docker
 
