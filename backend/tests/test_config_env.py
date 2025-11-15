@@ -55,3 +55,18 @@ def test_mongo_build_uri_from_env(tmp_path, monkeypatch):
     assert settings.mongo.uri is not None
     assert settings.mongo.uri.startswith("mongodb://mongo-user:")
     assert "mongo-host" in settings.mongo.uri
+
+
+def test_create_app_with_message_queue(monkeypatch):
+    # Ensure that setting a message_queue does not raise during create_app
+    from app import create_app
+    from app.config import Settings, RedisSection
+
+    settings = Settings.for_testing()
+    settings.redis = RedisSection(url="redis://localhost:6379/0", channel="auto-deploy")
+
+    # Creating the app with a message queue should not raise. Runtime errors
+    # resulting from missing monkey-patching would surface here when using
+    # eventlet + Redis manager; our app monkey-patches eventlet early.
+    app, socketio = create_app(settings)
+    assert app is not None

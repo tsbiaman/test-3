@@ -1,6 +1,20 @@
 from __future__ import annotations
 
+from pathlib import Path
+
 from app import create_app
+
+# Load .env automatically for local development (works with docker/docker-compose,
+# or when you want to avoid `export`-ing keys manually). This is a dev helper and
+# will silently no-op if python-dotenv is not installed or no .env file is found.
+try:
+    from dotenv import load_dotenv
+
+    env_path = Path(__file__).parent / ".env"
+    if env_path.exists():
+        load_dotenv(dotenv_path=env_path)
+except Exception:
+    pass
 
 app, socketio = create_app()
 

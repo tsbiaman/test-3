@@ -30,6 +30,17 @@ cp .env.example .env  # adjust credentials or leave blank to skip live checks
 python main.py
 ```
 
+Local development
+-----------------
+
+To avoid exporting `.env` manually every time you run the backend locally, the app will automatically load `.env` when running `python main.py` if `python-dotenv` is installed. That means you can start services in Docker (redis/postgres/mongo), ensure their ports are published (e.g. `6379`, `5432`, `27017`), and run the backend with `python main.py` from this directory.
+
+If you prefer to export environment variables in the current shell, run:
+
+```bash
+set -o allexport; source .env; set +o allexport
+```
+
 Browse `https://local-3-backend.tsbi.fun/api/health` or connect a Socket.IO client to `ws://localhost:8080`.
 
 ### Docker
