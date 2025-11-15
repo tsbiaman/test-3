@@ -55,8 +55,7 @@ def start_health_push(socketio: SocketIO, registry: DatabaseRegistry, settings: 
                 {
                     "timestamp": datetime.now(timezone.utc).isoformat(),
                     "databases": registry.report(),
-                },
-                broadcast=True,
+        },
             )
 
     _health_task_started = True

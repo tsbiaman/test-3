@@ -65,7 +65,10 @@ def create_job() -> Response:
 
     socketio = _socketio()
     if socketio:
-        socketio.emit("jobs:created", job, broadcast=True)
+        # Broadcast to all connected clients (no `to`/`room` means send to
+        # everyone). The `broadcast` keyword is not supported by the
+        # python-socketio server and would raise TypeError.
+        socketio.emit("jobs:created", job)
     return jsonify(job), 202
 
 
