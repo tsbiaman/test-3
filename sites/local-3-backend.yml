@@ -29,7 +29,7 @@ site:
       database: true
       redis: true
       health_check:
-        path: "/health"
+        path: "/api/health"
         scheme: "https"
     staging:
       enabled: true
