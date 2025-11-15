@@ -52,9 +52,11 @@ def test_mongo_build_uri_from_env(tmp_path, monkeypatch):
     monkeypatch.setenv("MONGO_DB", "mongo-db")
 
     settings = Settings.from_env()
-    assert settings.mongo.uri is not None
-    assert settings.mongo.uri.startswith("mongodb://mongo-user:")
-    assert "mongo-host" in settings.mongo.uri
+    assert settings.mongo.host == "mongo-host"
+    assert settings.mongo.port == 27017
+    assert settings.mongo.user == "mongo-user"
+    assert settings.mongo.password == "mongo-secret"
+    assert settings.mongo.database == "mongo-db"
 
 
 def test_create_app_with_message_queue(monkeypatch):

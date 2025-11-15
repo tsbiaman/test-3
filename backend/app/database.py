@@ -50,10 +50,16 @@ class MongoConnector(BaseConnector):
         self.config = config
 
     def configured(self) -> bool:
-        return bool(self.config.uri)
+        return bool(self.config.host and self.config.port)
 
     def ping(self) -> Dict[str, Any]:
-        client = MongoClient(self.config.uri, serverSelectionTimeoutMS=1000)
+        client = MongoClient(
+            host=self.config.host,
+            port=self.config.port,
+            username=self.config.user,
+            password=self.config.password,
+            serverSelectionTimeoutMS=1000
+        )
         start = perf_counter()
         client.admin.command("ping")
         latency = round((perf_counter() - start) * 1000, 2)

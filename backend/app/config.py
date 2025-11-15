@@ -39,38 +39,31 @@ class AppSection:
 
 @dataclass
 class MongoSection:
-    uri: Optional[str]
+    host: Optional[str]
+    port: Optional[int]
+    user: Optional[str]
+    password: Optional[str]
     database: Optional[str]
-    collection: Optional[str]
+    collection: str
 
     @classmethod
     def from_env(cls) -> "MongoSection":
         env = os.environ
-        # Support either a full URI or the discrete host/port credentials
-        uri = env.get("MONGO_URI")
-        if not uri:
-            host = env.get("MONGO_HOST")
-            port = env.get("MONGO_PORT")
-            user = env.get("MONGO_USER")
-            pwd = env.get("MONGO_PASSWORD")
-            pwd_file = env.get("MONGO_PASSWORD_FILE")
-            # prefer read from file when present
-            if not pwd and pwd_file:
-                try:
-                    pwd = Path(pwd_file).read_text().strip()
-                except FileNotFoundError:
-                    pwd = None
-            if host and port:
-                if user and pwd:
-                    uri = f"mongodb://{quote(user)}:{quote(pwd)}@{host}:{port}"
-                else:
-                    uri = f"mongodb://{host}:{port}"
-
-        return cls(
-            uri=uri,
-            database=env.get("MONGO_DB"),
-            collection=env.get("MONGO_COLLECTION", "deploy_events"),
-        )
+        host = env.get("MONGO_HOST")
+        port_str = env.get("MONGO_PORT")
+        port = int(port_str) if port_str else None
+        user = env.get("MONGO_USER")
+        pwd = env.get("MONGO_PASSWORD")
+        pwd_file = env.get("MONGO_PASSWORD_FILE")
+        # prefer read from file when present
+        if not pwd and pwd_file:
+            try:
+                pwd = Path(pwd_file).read_text().strip()
+            except FileNotFoundError:
+                pwd = None
+        database = env.get("MONGO_DB")
+        collection = env.get("MONGO_COLLECTION", "deploy_events")
+        return cls(host=host, port=port, user=user, password=pwd, database=database, collection=collection)
 
 
 @dataclass
@@ -190,7 +183,7 @@ class Settings:
                 "broadcast_interval": self.app.broadcast_interval,
             },
             "mongo": {
-                "enabled": bool(self.mongo.uri),
+                "enabled": bool(self.mongo.host and self.mongo.port),
                 "database": self.mongo.database,
                 "collection": self.mongo.collection,
             },
