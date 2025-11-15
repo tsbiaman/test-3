@@ -1,7 +1,7 @@
 site:
   id: local-3-backend
   name: "LOCAL_3 Backend (Flask + DBs)"
-  github_repo: "https://github.com/tsbiaman/testing"
+  github_repo: "https://github.com/tsbiaman/test-3"
 
   build:
     context: "LOCAL_3/backend"
