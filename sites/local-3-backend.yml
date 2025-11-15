@@ -31,6 +31,7 @@ site:
       health_check:
         path: "/api/health"
         scheme: "https"
+        rollback: false
     staging:
       enabled: true
       branch: develop
