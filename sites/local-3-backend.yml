@@ -28,6 +28,9 @@ site:
       replicas: 2
       database: true
       redis: true
+      health_check:
+        path: "/health"
+        scheme: "https"
     staging:
       enabled: true
       branch: develop
