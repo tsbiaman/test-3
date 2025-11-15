@@ -4,6 +4,7 @@ from dataclasses import dataclass
 import os
 from typing import Any, Dict, Optional
 from pathlib import Path
+from urllib.parse import quote
 
 
 def _to_bool(value: Optional[str], default: bool) -> bool:
@@ -61,7 +62,7 @@ class MongoSection:
                     pwd = None
             if host and port:
                 if user and pwd:
-                    uri = f"mongodb://{user}:{pwd}@{host}:{port}"
+                    uri = f"mongodb://{quote(user)}:{quote(pwd)}@{host}:{port}"
                 else:
                     uri = f"mongodb://{host}:{port}"
 
