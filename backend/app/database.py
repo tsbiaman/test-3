@@ -58,7 +58,7 @@ class MongoConnector(BaseConnector):
             port=self.config.port,
             username=self.config.user,
             password=self.config.password,
-            serverSelectionTimeoutMS=1000
+            serverSelectionTimeoutMS=5000
         )
         start = perf_counter()
         client.admin.command("ping")
@@ -82,7 +82,7 @@ class RedisConnector(BaseConnector):
         return bool(self.config.url)
 
     def ping(self) -> Dict[str, Any]:
-        client = redis.from_url(self.config.url, socket_timeout=1)
+        client = redis.from_url(self.config.url, socket_timeout=5)
         start = perf_counter()
         client.ping()
         latency = round((perf_counter() - start) * 1000, 2)
@@ -110,7 +110,7 @@ class PostgresConnector(BaseConnector):
         if not dsn:
             raise RuntimeError("PostgreSQL DSN missing")
         start = perf_counter()
-        conn = psycopg2.connect(dsn=dsn, connect_timeout=2)
+        conn = psycopg2.connect(dsn=dsn, connect_timeout=5)
         with conn.cursor() as cursor:
             cursor.execute("SELECT 1")
             cursor.fetchone()

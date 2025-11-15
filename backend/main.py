@@ -1,7 +1,19 @@
 from __future__ import annotations
 
+import socket
+orig_gethostbyname = socket.gethostbyname
+orig_getaddrinfo = socket.getaddrinfo
+orig_gethostbyaddr = socket.gethostbyaddr
+orig_gethostbyname_ex = socket.gethostbyname_ex
+
 import eventlet
 eventlet.monkey_patch()
+
+# Restore original socket DNS functions to avoid greendns timeouts
+socket.gethostbyname = orig_gethostbyname
+socket.getaddrinfo = orig_getaddrinfo
+socket.gethostbyaddr = orig_gethostbyaddr
+socket.gethostbyname_ex = orig_gethostbyname_ex
 
 from pathlib import Path
 
