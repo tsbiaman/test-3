@@ -37,8 +37,8 @@ def register_socketio_handlers(socketio: SocketIO, registry: DatabaseRegistry, s
                 "stage": data.get("stage", "deploy"),
                 "status": data.get("status", "running"),
                 "timestamp": datetime.now(timezone.utc).isoformat(),
-            },
-            broadcast=True,
+            }
+            # broadcast=True,
         )
 
 
