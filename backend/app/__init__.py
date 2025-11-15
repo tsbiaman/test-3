@@ -1,5 +1,16 @@
 from __future__ import annotations
 
+try:  # Ensure eventlet is monkey-patched as early as possible so any socket
+    # modules (redis manager/socket) are compatible when using eventlet.
+    import importlib
+
+    eventlet = importlib.import_module("eventlet")
+    eventlet.monkey_patch()
+except Exception:
+    # Missing eventlet is acceptable in test environments; the async backend
+    # will be chosen from available libraries when creating the app.
+    pass
+
 from flask import Flask
 from flask_cors import CORS
 from flask_socketio import SocketIO
