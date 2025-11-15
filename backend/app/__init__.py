@@ -1,5 +1,12 @@
 from __future__ import annotations
 
+import os
+
+try:
+    os.environ.setdefault("EVENTLET_NO_GREENDNS", "1")
+except Exception:
+    pass
+
 try:  # Ensure eventlet is monkey-patched as early as possible so any socket
     # modules (redis manager/socket) are compatible when using eventlet.
     import importlib
