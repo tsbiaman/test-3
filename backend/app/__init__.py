@@ -3,6 +3,16 @@ from __future__ import annotations
 from flask import Flask
 from flask_cors import CORS
 from flask_socketio import SocketIO
+try:  # Ensure eventlet monkey patched early so redis works with socketio
+    import importlib
+
+    eventlet = importlib.import_module("eventlet")
+    # eventlet.monkey_patch should be called once and as early as possible.
+    eventlet.monkey_patch()
+except Exception:
+    # If eventlet isn't available, nothing to patch. When running in a different
+    # async mode the app chooses a compatible library automatically.
+    pass
 
 from .config import Settings
 from .database import DatabaseRegistry
