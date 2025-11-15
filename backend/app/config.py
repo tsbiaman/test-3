@@ -161,7 +161,7 @@ class Settings:
                 broadcast_interval=60,
                 enable_background_tasks=False,
             ),
-            mongo=MongoSection(uri=None, database=None, collection="deploy_events"),
+            mongo=MongoSection(host=None, port=None, user=None, password=None, database=None, collection="deploy_events"),
             redis=RedisSection(url=None, channel="auto-deploy"),
             postgres=PostgresSection(
                 dsn=None,
