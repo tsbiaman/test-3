@@ -3,6 +3,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 import os
 from typing import Any, Dict, Optional
+from pathlib import Path
 
 
 def _to_bool(value: Optional[str], default: bool) -> bool:
@@ -28,7 +29,7 @@ class AppSection:
             name=env.get("APP_NAME", "auto-deploy-lab"),
             version=env.get("APP_VERSION", "0.1.0"),
             host=env.get("APP_HOST", "0.0.0.0"),
-            port=int(env.get("APP_PORT", "8080")),
+            port=int(env.get("APP_PORT", "9080")),
             debug=_to_bool(env.get("FLASK_DEBUG"), False),
             broadcast_interval=float(env.get("BROADCAST_INTERVAL_SECONDS", "15")),
             enable_background_tasks=_to_bool(env.get("ENABLE_BACKGROUND_TASKS"), True),
@@ -44,8 +45,28 @@ class MongoSection:
     @classmethod
     def from_env(cls) -> "MongoSection":
         env = os.environ
+        # Support either a full URI or the discrete host/port credentials
+        uri = env.get("MONGO_URI")
+        if not uri:
+            host = env.get("MONGO_HOST")
+            port = env.get("MONGO_PORT")
+            user = env.get("MONGO_USER")
+            pwd = env.get("MONGO_PASSWORD")
+            pwd_file = env.get("MONGO_PASSWORD_FILE")
+            # prefer read from file when present
+            if not pwd and pwd_file:
+                try:
+                    pwd = Path(pwd_file).read_text().strip()
+                except FileNotFoundError:
+                    pwd = None
+            if host and port:
+                if user and pwd:
+                    uri = f"mongodb://{user}:{pwd}@{host}:{port}"
+                else:
+                    uri = f"mongodb://{host}:{port}"
+
         return cls(
-            uri=env.get("MONGO_URI"),
+            uri=uri,
             database=env.get("MONGO_DB"),
             collection=env.get("MONGO_COLLECTION", "deploy_events"),
         )
@@ -59,10 +80,24 @@ class RedisSection:
     @classmethod
     def from_env(cls) -> "RedisSection":
         env = os.environ
-        return cls(
-            url=env.get("REDIS_URL"),
-            channel=env.get("REDIS_CHANNEL", "auto-deploy"),
-        )
+        url = env.get("REDIS_URL")
+        if not url:
+            host = env.get("REDIS_HOST")
+            port = env.get("REDIS_PORT")
+            pwd = env.get("REDIS_PASSWORD")
+            pwd_file = env.get("REDIS_PASSWORD_FILE")
+            if not pwd and pwd_file:
+                try:
+                    pwd = Path(pwd_file).read_text().strip()
+                except FileNotFoundError:
+                    pwd = None
+            if host and port:
+                if pwd:
+                    url = f"redis://:{pwd}@{host}:{port}/0"
+                else:
+                    url = f"redis://{host}:{port}/0"
+
+        return cls(url=url, channel=env.get("REDIS_CHANNEL", "auto-deploy"))
 
 
 @dataclass
@@ -77,14 +112,19 @@ class PostgresSection:
     @classmethod
     def from_env(cls) -> "PostgresSection":
         env = os.environ
-        port = env.get("POSTGRES_PORT")
+        # Support legacy POSTGRES_* and new DB_* environment variable naming
+        # used by the deployment manifests. Prefer DSN when present.
+        port = env.get("POSTGRES_PORT") or env.get("DB_PORT")
         return cls(
-            dsn=env.get("POSTGRES_DSN"),
-            host=env.get("POSTGRES_HOST"),
+            dsn=env.get("POSTGRES_DSN") or env.get("DB_DSN"),
+            host=env.get("POSTGRES_HOST") or env.get("DB_HOST"),
             port=int(port) if port else None,
-            user=env.get("POSTGRES_USER"),
-            password=env.get("POSTGRES_PASSWORD"),
-            database=env.get("POSTGRES_DB"),
+            user=env.get("POSTGRES_USER") or env.get("DB_USER"),
+            password=(env.get("POSTGRES_PASSWORD") or env.get("DB_PASSWORD")
+                      or (Path(env.get("DB_PASSWORD_FILE")).read_text().strip()
+                          if env.get("DB_PASSWORD_FILE") and Path(env.get("DB_PASSWORD_FILE")).exists()
+                          else None)),
+            database=env.get("POSTGRES_DB") or env.get("DB_NAME"),
         )
 
     def build_dsn(self) -> Optional[str]:

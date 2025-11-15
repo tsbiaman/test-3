@@ -28,6 +28,7 @@ site:
       replicas: 2
       database: true
       redis: true
+      mongo: true
       health_check:
         path: "/api/health"
         scheme: "https"
@@ -48,6 +49,7 @@ site:
       replicas: 1
       database: true
       redis: true
+      mongo: true
     preview:
       enabled: true
       branch: develop
@@ -56,3 +58,4 @@ site:
       replicas: 1
       database: true
       redis: true
+      mongo: true
