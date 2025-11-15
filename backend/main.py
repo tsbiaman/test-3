@@ -1,3 +1,6 @@
+import eventlet
+eventlet.monkey_patch()
+
 from __future__ import annotations
 
 from pathlib import Path
