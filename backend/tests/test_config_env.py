@@ -70,3 +70,28 @@ def test_create_app_with_message_queue(monkeypatch):
     # eventlet + Redis manager; our app monkey-patches eventlet early.
     app, socketio = create_app(settings)
     assert app is not None
+
+
+def test_create_app_disables_message_queue_when_unavailable(monkeypatch):
+    from app import create_app
+    from app.config import Settings, RedisSection
+
+    settings = Settings.for_testing()
+    # Make a pretend redis URL
+    settings.redis = RedisSection(url="redis://no-such-host:6379/0", channel="auto-deploy")
+
+    # Patch redis.from_url so ping raises an error similar to connection error
+    import types
+
+    class Dummy:
+        def __init__(self, *a, **k):
+            pass
+
+        def ping(self):
+            raise ConnectionError("no route to host")
+
+    import redis as _redis
+    monkeypatch.setattr(_redis, 'from_url', lambda url, socket_timeout=None: Dummy())
+
+    app, socketio = create_app(settings)
+    assert app is not None
